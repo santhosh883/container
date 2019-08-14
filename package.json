@@ -1,6 +1,6 @@
 {
-  "name": "alt-container",
-  "version": "1.1.1",
+  "name": "iss-alt-container",
+  "version": "1.0.0-beta.0",
   "description": "A flux container for alt",
   "main": "lib/AltContainer.js",
   "scripts": {
