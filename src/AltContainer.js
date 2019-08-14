@@ -56,10 +56,10 @@
  * Full docs available at http://goatslacker.github.io/alt/
  */
 import React from 'react'
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types'
 import assign from 'object.assign'
 
-const id = it => it
+const id = (it) => it
 const getStateFromStore = (store, props) => {
   return typeof store === 'function' ? store(props).value : store.getState()
 }
@@ -87,12 +87,7 @@ const getInjected = (props) => {
 }
 
 const reduceState = (props) => {
-  return assign(
-    {},
-    getStateFromStores(props),
-    getStateFromActions(props),
-    getInjected(props)
-  )
+  return assign({}, getStateFromStores(props), getStateFromActions(props), getInjected(props))
 }
 
 const getStateFromStores = (props) => {
@@ -103,7 +98,7 @@ const getStateFromStores = (props) => {
     // If you pass in an array of stores then we are just listening to them
     // it should be an object then the state is added to the key specified
     if (!Array.isArray(stores)) {
-      return Object.keys(stores).reduce(function (obj, key) {
+      return Object.keys(stores).reduce(function(obj, key) {
         obj[key] = getStateFromStore(stores[key], props)
         return obj
       }, {})
@@ -136,8 +131,6 @@ class AltContainer extends React.Component {
       throw new ReferenceError('Cannot define both store and stores')
     }
 
-    this.storeListeners = []
-
     this.state = reduceState(props)
   }
 
@@ -169,7 +162,7 @@ class AltContainer extends React.Component {
       this._addSubscription(props.store)
     } else if (props.stores) {
       if (Array.isArray(stores)) {
-        stores.forEach(store => this._addSubscription(store))
+        stores.forEach((store) => this._addSubscription(store))
       } else {
         Object.keys(stores).forEach((formatter) => {
           this._addSubscription(stores[formatter])
@@ -179,15 +172,24 @@ class AltContainer extends React.Component {
   }
 
   _destroySubscriptions() {
-    this.storeListeners.forEach(storeListener => storeListener())
+    const stores = this.props.stores
+    const store = this.props.store
+
+    if (store) {
+      store.unlisten(this.altSetState)
+    } else if (stores) {
+      if (Array.isArray(stores)) {
+        stores.forEach((store) => store.unlisten(this.altSetState))
+      } else {
+        Object.values(stores).forEach((store) => store.unlisten(this.altSetState))
+      }
+    }
   }
 
   _addSubscription(getStore) {
-    const store = typeof getStore === 'function'
-      ? getStore(this.props).store
-      : getStore
+    const store = typeof getStore === 'function' ? getStore(this.props).store : getStore
 
-    this.storeListeners.push(store.listen(this.altSetState))
+    store.listen(this.altSetState)
   }
 
   altSetState = () => {
@@ -196,13 +198,8 @@ class AltContainer extends React.Component {
 
   getProps() {
     var flux = this.props.flux || this.context.flux
-    var transform = typeof this.props.transform === 'function'
-      ? this.props.transform
-      : id
-    return transform(assign(
-      flux ? { flux: flux } : {},
-      this.state
-    ))
+    var transform = typeof this.props.transform === 'function' ? this.props.transform : id
+    return transform(assign(flux ? { flux: flux } : {}, this.state))
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -224,12 +221,13 @@ class AltContainer extends React.Component {
 
     // Does not wrap child in a div if we don't have to.
     if (Array.isArray(children)) {
-      return React.createElement(Node, null, children.map((child, i) => {
-        return React.cloneElement(child, assign(
-          { key: i },
-          this.getProps()
-        ))
-      }))
+      return React.createElement(
+        Node,
+        null,
+        children.map((child, i) => {
+          return React.cloneElement(child, assign({ key: i }, this.getProps()))
+        })
+      )
     } else if (children) {
       return React.cloneElement(children, this.getProps())
     } else {
